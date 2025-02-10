@@ -13,23 +13,23 @@ min_cnt_height = 40
 min_cnt_area = 500
 
 values = {
-    'max cnt w': CPI(value=90, maximum=200),
-    'min cnt h': CPI(value=120, maximum=200),
-    'clahe limit': CPI(value=10, maximum=50),
-    'erosion first': CPI(value=1, maximum=1),
-    'morph iterations': CPI(value=5, maximum=10),
-    'erosion iterations': CPI(value=1, maximum=10),
-    'e kernal w': CPI(value=1, maximum=15, minimum=1),
-    'e kernal h': CPI(value=5, maximum=15, minimum=1),
-    'dilation iterations': CPI(value=2, maximum=10),
-    'd kernal w': CPI(value=2, maximum=15, minimum=1),
-    'd kernal h': CPI(value=5, maximum=15, minimum=1),
-    'min H': CPI(value=250, maximum=360),
-    'max H': CPI(value=23, maximum=360),
-    'min S': CPI(value=60),
-    'max S': CPI(value=255),
-    'min V': CPI(value=0),
-    'max V': CPI(value=160),
+    'max_cnt_w': CPI(value=90, maximum=200),
+    'min_cnt_h': CPI(value=120, maximum=200),
+    'clahe_limit': CPI(value=10, maximum=50),
+    'erosion_first': CPI(value=1, maximum=1),
+    'morph_iterations': CPI(value=5, maximum=10),
+    'erosion_iterations': CPI(value=1, maximum=10),
+    'e_kernal_w': CPI(value=1, maximum=15, minimum=1),
+    'e_kernal_h': CPI(value=5, maximum=15, minimum=1),
+    'dilation_iterations': CPI(value=2, maximum=10),
+    'd_kernal_w': CPI(value=2, maximum=15, minimum=1),
+    'd_kernal_h': CPI(value=5, maximum=15, minimum=1),
+    'min_H': CPI(value=250, maximum=360),
+    'max_H': CPI(value=23, maximum=360),
+    'min_S': CPI(value=60),
+    'max_S': CPI(value=255),
+    'min_V': CPI(value=0),
+    'max_V': CPI(value=160),
 }
 create_control_panel("Quali gate thresholds",values)
 
@@ -91,7 +91,7 @@ class QualiGateDetector(Node):
 
         # Applying CLAHE to L-channel
         # feel free to try different values for the limit and grid size:
-        clahe = cv2.createCLAHE(clipLimit=values['clahe limit'].value/10, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=values['clahe_limit'].value/10, tileGridSize=(8,8))
         cl = clahe.apply(v)
 
         # merge the CLAHE enhanced L-channel with the a and b channel
@@ -102,8 +102,8 @@ class QualiGateDetector(Node):
         poles_mask = self.find_poles(hsv_clahe)
         self.pub_img(poles_mask)#, encoding="bgr8")
 
-        erode_first = values['erosion first'].value
-        morph_iterations = values['morph iterations'].value
+        erode_first = values['erosion_first'].value
+        morph_iterations = values['morph_iterations'].value
         second_morph = poles_mask
 
         for i in range(morph_iterations):
@@ -138,22 +138,22 @@ class QualiGateDetector(Node):
         self.pub_gate_detection.publish(msg)
 
     def find_poles(self, frame):
-        if values["min H"].value < values["max H"].value:
-            return cv2.inRange(frame, (values["min H"].value/2, values["min S"].value, values["min V"].value), (values["max H"].value/2, values["max S"].value, values["max V"].value))
+        if values["min_H"].value < values["max_H"].value:
+            return cv2.inRange(frame, (values["min_H"].value/2, values["min_S"].value, values["min_V"].value), (values["max_H"].value/2, values["max_S"].value, values["max_V"].value))
         # divide the H values by 2 because our slider is 0-360 but cv2 takes 0-180
         else:
-            first = cv2.inRange(frame, (0, values["min S"].value, values["min V"].value), (values["max H"].value/2, values["max S"].value, values["max V"].value))
-            second = cv2.inRange(frame, (values['min H'].value/2, values["min S"].value, values["min V"].value), (values["min H"].maximum/2, values["max S"].value, values["max V"].value))
+            first = cv2.inRange(frame, (0, values["min_S"].value, values["min_V"].value), (values["max_H"].value/2, values["max_S"].value, values["max_V"].value))
+            second = cv2.inRange(frame, (values['min_H'].value/2, values["min_S"].value, values["min_V"].value), (values["min H"].maximum/2, values["max_S"].value, values["max_V"].value))
             return cv2.bitwise_or(first, second)
 
     def erode(self, mask):
-        erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['e kernal w'].value, values['e kernal h'].value))
-        eroded = cv2.erode(mask, erosion_kernel, iterations=values['erosion iterations'].value)
+        erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['e_kernal_w'].value, values['e_kernal_h'].value))
+        eroded = cv2.erode(mask, erosion_kernel, iterations=values['erosion_iterations'].value)
         return eroded
     
     def dilate(self, mask):
-        dilation_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['d kernal w'].value, values['d kernal h'].value))
-        dilated = cv2.dilate(mask, dilation_kernel, iterations=values['dilation iterations'].value)
+        dilation_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['d_kernal_w'].value, values['d_kernal_h'].value))
+        dilated = cv2.dilate(mask, dilation_kernel, iterations=values['dilation_iterations'].value)
         return dilated
 
     def filter_contours(self, mask, remove_top=True):
@@ -173,7 +173,7 @@ class QualiGateDetector(Node):
         def filter_by_dimensions(cnt):
             _, _, w, h = cv2.boundingRect(cnt)
             # print(w,h)
-            return (w < values['max cnt w'].value and h > values['min cnt h'].value)
+            return (w < values['max_cnt_w'].value and h > values['min_cnt_h'].value)
         cnts = list(filter(lambda c: filter_by_dimensions(c), cnts))
         # print("3",[cv2.contourArea(i) for i in cnts])
         # remove contours in top 30% of image

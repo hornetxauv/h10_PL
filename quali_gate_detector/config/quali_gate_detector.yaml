@@ -1,0 +1,88 @@
+quali_gate_detector_node:
+  ros__parameters:
+    config_location: '/config/quali_gate_pid.yaml'
+
+    max_cnt_w: 90.0
+    max_cnt_w_min: 0.0
+    max_cnt_w_max: 200.0
+    max_cnt_w_step: 1
+
+    min_cnt_h: 120.0
+    min_cnt_h_min: 0.0
+    min_cnt_h_max: 200.0
+    min_cnt_h_step: 1
+
+    clahe_limit: 1.0
+    clahe_limit_min: 0.0
+    clahe_limit_max: 5.0
+    clahe_limit_step: 1
+
+    erosion_first: 1.0
+    erosion_first_min: 0.0
+    erosion_first_max: 1.0
+    erosion_first_step: 1
+
+    morph_iterations: 5.0
+    morph_iterations_min: 0.0
+    morph_iterations_max: 10.0
+    morph_iterations_step: 1
+
+    erosion_iterations: 1.0
+    erosion_iterations_min: 0.0
+    erosion_iterations_max: 10.0
+    erosion_iterations_step: 1
+
+    e_kernel_w: 1.0
+    e_kernel_w_min: 1.0
+    e_kernel_w_max: 15.0
+    e_kernel_w_step: 1
+
+    e_kernel_h: 5.0
+    e_kernel_h_min: 1.0
+    e_kernel_h_max: 15.0
+    e_kernel_h_step: 1
+
+    dilation_iterations: 2.0
+    dilation_iterations_min: 0.0
+    dilation_iterations_max: 10.0
+    dilation_iterations_step: 1
+
+    d_kernel_w: 2.0
+    d_kernel_w_min: 1.0
+    d_kernel_w_max: 15.0
+    d_kernel_w_step: 1
+
+    d_kernel_h: 5.0
+    d_kernel_h_min: 1.0
+    d_kernel_h_max: 15.0
+    d_kernel_h_step: 1
+
+    min_H: 250.0
+    min_H_min: 0.0
+    min_H_max: 360.0
+    min_H_step: 1
+
+    max_H: 23.0
+    max_H_min: 0.0
+    max_H_max: 360.0
+    max_H_step: 1
+
+    min_S: 60.0
+    min_S_min: 0.0
+    min_S_max: 255.0
+    min_S_step: 1
+
+    max_S: 255.0
+    max_S_min: 0.0
+    max_S_max: 255.0
+    max_S_step: 1
+
+    min_V: 0.0
+    min_V_min: 0.0
+    min_V_max: 255.0
+    min_V_step: 1
+
+    max_V: 160.0
+    max_V_min: 0.0
+    max_V_max: 255.0
+    max_V_step: 1
