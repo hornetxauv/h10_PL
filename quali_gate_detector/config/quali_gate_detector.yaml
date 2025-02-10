@@ -1,6 +1,6 @@
 quali_gate_detector_node:
   ros__parameters:
-    config_location: '/config/quali_gate_pid.yaml'
+    config_location: '/config/quali_gate_detector.yaml'
 
     max_cnt_w: 90.0
     max_cnt_w_min: 0.0
