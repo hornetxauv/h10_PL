@@ -8,30 +8,35 @@ from sensor_msgs.msg import Image, CompressedImage
 from custom_msgs.msg import GateDetection
 from control_panel.control_panel import create_control_panel, ControlPanelItem as CPI
 
+# for foxglove params
+from rclpy.executors import MultiThreadedExecutor
+from ament_index_python.packages import get_package_share_directory
+from controls_movement.param_helper import read_pid_yaml_and_generate_parameters
+
 max_cnt_width = 200
 min_cnt_height = 40
 min_cnt_area = 500
 
-values = {
-    'max cnt w': CPI(value=90, maximum=200),
-    'min cnt h': CPI(value=120, maximum=200),
-    'clahe limit': CPI(value=10, maximum=50),
-    'erosion first': CPI(value=1, maximum=1),
-    'morph iterations': CPI(value=5, maximum=10),
-    'erosion iterations': CPI(value=1, maximum=10),
-    'e kernal w': CPI(value=1, maximum=15, minimum=1),
-    'e kernal h': CPI(value=5, maximum=15, minimum=1),
-    'dilation iterations': CPI(value=2, maximum=10),
-    'd kernal w': CPI(value=2, maximum=15, minimum=1),
-    'd kernal h': CPI(value=5, maximum=15, minimum=1),
-    'min H': CPI(value=250, maximum=360),
-    'max H': CPI(value=23, maximum=360),
-    'min S': CPI(value=60),
-    'max S': CPI(value=255),
-    'min V': CPI(value=0),
-    'max V': CPI(value=160),
-}
-create_control_panel("Quali gate thresholds",values)
+#values = {
+#    'max_cnt_w': CPI(value=90, maximum=200),
+#    'min_cnt_h': CPI(value=120, maximum=200),
+#    'clahe_limit': CPI(value=10, maximum=50),
+#    'erosion_first': CPI(value=1, maximum=1),
+#    'morph_iterations': CPI(value=5, maximum=10),
+#    'erosion_iterations': CPI(value=1, maximum=10),
+#    'e_kernal_w': CPI(value=1, maximum=15, minimum=1),
+#    'e_kernal_h': CPI(value=5, maximum=15, minimum=1),
+#    'dilation_iterations': CPI(value=2, maximum=10),
+#    'd_kernal_w': CPI(value=2, maximum=15, minimum=1),
+#    'd_kernal_h': CPI(value=5, maximum=15, minimum=1),
+#    'min_H': CPI(value=250, maximum=360),
+#    'max_H': CPI(value=23, maximum=360),
+#    'min_S': CPI(value=60),
+#    'max_S': CPI(value=255),
+#    'min_V': CPI(value=0),
+#    'max_V': CPI(value=160),
+#}
+#create_control_panel("Quali gate thresholds",values)
 
 # def custom_open(input):
 #     output = cv2.erode(input, taller_kernel, iterations=1)
@@ -43,7 +48,12 @@ class QualiGateDetector(Node):
     prev_msg = None
 
     def __init__(self):
-        super().__init__("detector")
+        super().__init__("quali_gate_detector_node")
+        package_directory = get_package_share_directory('quali_gate_detector')
+        self.declare_parameter('config_location', rclpy.Parameter.Type.STRING)
+        config_location = package_directory + self.get_parameter('config_location').get_parameter_value().string_value
+        self.declare_parameters(namespace='', parameters=read_pid_yaml_and_generate_parameters('quali_gate_detector_node', config_location))
+
         self.pub_debug_img = self.create_publisher(Image, "/perc/debug_img", 10)
         self.pub_debug_img_2 = self.create_publisher(Image, "/perc/debug_img_2", 10)
         self.pub_debug_img_3 = self.create_publisher(Image, "/perc/debug_img_3", 10)
@@ -53,14 +63,17 @@ class QualiGateDetector(Node):
             "/perc/quali_gate", 10)
         self.sub_image_feed = self.create_subscription(
             CompressedImage,
-            "/left/compressed", #for feed from session3 rosbag
-            # "/left/image_raw/compressed", #for live feed from v4l2
+            #"/left/compressed", #for feed from session3 rosbag
+            "/left/image_raw/compressed", #for live feed from v4l2
             self.image_feed_callback,
             10)
         self.bridge = CvBridge()
 
         timer_period = 0.5
         self.timer = self.create_timer(timer_period, self.when_not_playing)
+    
+    def get_value(self, param_name: str):
+        return int(self.get_parameter(param_name).get_parameter_value().double_value)
 
     def image_feed_callback(self, msg):
         self.process_image(msg)
@@ -91,7 +104,7 @@ class QualiGateDetector(Node):
 
         # Applying CLAHE to L-channel
         # feel free to try different values for the limit and grid size:
-        clahe = cv2.createCLAHE(clipLimit=values['clahe limit'].value/10, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=self.get_value("clahe_limit"), tileGridSize=(8,8))
         cl = clahe.apply(v)
 
         # merge the CLAHE enhanced L-channel with the a and b channel
@@ -102,8 +115,8 @@ class QualiGateDetector(Node):
         poles_mask = self.find_poles(hsv_clahe)
         self.pub_img(poles_mask)#, encoding="bgr8")
 
-        erode_first = values['erosion first'].value
-        morph_iterations = values['morph iterations'].value
+        erode_first = self.get_value("erosion_first")
+        morph_iterations = self.get_value("morph_iterations")
         second_morph = poles_mask
 
         for i in range(morph_iterations):
@@ -144,22 +157,23 @@ class QualiGateDetector(Node):
         self.pub_gate_detection.publish(msg)
 
     def find_poles(self, frame):
-        if values["min H"].value < values["max H"].value:
-            return cv2.inRange(frame, (values["min H"].value/2, values["min S"].value, values["min V"].value), (values["max H"].value/2, values["max S"].value, values["max V"].value))
+        if self.get_value("min_H") < self.get_value("max_H"):
+            return cv2.inRange(frame, (self.get_value("min_H"), self.get_value("min_S"), self.get_value("min_V")), (self.get_value("max_H"), self.get_value("max_S"), self.get_value("max_V")))
         # divide the H values by 2 because our slider is 0-360 but cv2 takes 0-180
         else:
-            first = cv2.inRange(frame, (0, values["min S"].value, values["min V"].value), (values["max H"].value/2, values["max S"].value, values["max V"].value))
-            second = cv2.inRange(frame, (values['min H'].value/2, values["min S"].value, values["min V"].value), (values["min H"].maximum/2, values["max S"].value, values["max V"].value))
+            first = cv2.inRange(frame, (0, self.get_value("min_S"), self.get_value("min_V")), (self.get_value("max_H"), self.get_value("max_S"), self.get_value("max_V")))
+            # 180 used to be values["min H"].maximum/2
+            second = cv2.inRange(frame, (self.get_value("min_H"), self.get_value("min_S"), self.get_value("min_V")), (180, self.get_value("max_S"), self.get_value("max_V")))
             return cv2.bitwise_or(first, second)
 
     def erode(self, mask):
-        erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['e kernal w'].value, values['e kernal h'].value))
-        eroded = cv2.erode(mask, erosion_kernel, iterations=values['erosion iterations'].value)
+        erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (self.get_value("e_kernel_w"), self.get_value("e_kernel_h")))
+        eroded = cv2.erode(mask, erosion_kernel, iterations=self.get_value("erosion_iterations"))
         return eroded
     
     def dilate(self, mask):
-        dilation_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (values['d kernal w'].value, values['d kernal h'].value))
-        dilated = cv2.dilate(mask, dilation_kernel, iterations=values['dilation iterations'].value)
+        dilation_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (self.get_value("d_kernel_w"), self.get_value("d_kernel_h")))
+        dilated = cv2.dilate(mask, dilation_kernel, iterations=self.get_value("dilation_iterations"))
         return dilated
 
     def filter_contours(self, mask, remove_top=True):
@@ -179,7 +193,7 @@ class QualiGateDetector(Node):
         def filter_by_dimensions(cnt):
             _, _, w, h = cv2.boundingRect(cnt)
             # print(w,h)
-            return (w < values['max cnt w'].value and h > values['min cnt h'].value)
+            return (w < self.get_value("max_cnt_w") and h > self.get_value("min_cnt_h"))
         cnts = list(filter(lambda c: filter_by_dimensions(c), cnts))
         # print("3",[cv2.contourArea(i) for i in cnts])
         # remove contours in top 30% of image
@@ -297,13 +311,13 @@ class QualiGateDetector(Node):
     #     self.pub_debug_img_2.publish(img_msg)
     
 def main(args=None):
-
     rclpy.init(args=args)
     detector = QualiGateDetector()
-    rclpy.spin(detector)
 
-    # Below lines are not strictly necessary
-    detector.destroy_node()
+    executor = MultiThreadedExecutor()
+    executor.add_node(detector)
+    executor.spin()
+    
     rclpy.shutdown()
         
 if __name__=='__main__':
