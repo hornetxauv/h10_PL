@@ -44,13 +44,17 @@ class QualiGateDetector(Node):
         self.bridge = CvBridge()
 
         timer_period = 0.5
-        self.timer = self.create_timer(timer_period, self.when_not_playing)
+        self.main_timer = self.create_timer(0.1, self.timer_callback)
+        # self.timer = self.create_timer(timer_period, self.when_not_playing)
     
     def get_value(self, param_name: str):
         return int(self.get_parameter(param_name).get_parameter_value().double_value)
 
+    def timer_callback(self):
+        self.process_image(self.prev_msg)
+
     def image_feed_callback(self, msg):
-        self.process_image(msg)
+        # self.process_image(msg)
         self.is_playing = True
         self.prev_msg = msg
 
@@ -63,6 +67,8 @@ class QualiGateDetector(Node):
     def process_image(self, msg):
         if (msg == None):
             return
+        
+        self.get_logger().info(f"process image, {self.get_value('clahe_limit')}")
 
         # Feel free to modify this callback function, or add other functions in any way you deem fit
         # Here is sample code for converting a coloured image to gray scale using opencv
