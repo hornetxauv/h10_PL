@@ -15,10 +15,6 @@ class QualiGateDetector(Node):
 
     def __init__(self):
         super().__init__("quali_gate_detector_node")
-        package_directory = get_package_share_directory('quali_gate_detector')
-        self.declare_parameter('config_location', rclpy.Parameter.Type.STRING)
-        config_location = package_directory + self.get_parameter('config_location').get_parameter_value().string_value
-        self.declare_parameters(namespace='', parameters=read_pid_yaml_and_generate_parameters('quali_gate_detector_node', config_location))
 
         self.sub_image_feed = self.create_subscription(
             CompressedImage,
@@ -30,9 +26,15 @@ class QualiGateDetector(Node):
 
         self.get_logger().info("init")
 
-        input_thread = threading.Thread(target=cv2.waitKey)
+        input_thread = threading.Thread(target=self.init_foxglove_params)
         input_thread.daemon = True
         input_thread.start()
+
+    def init_foxglove_params(self):
+        package_directory = get_package_share_directory('quali_gate_detector')
+        self.declare_parameter('config_location', rclpy.Parameter.Type.STRING)
+        config_location = package_directory + self.get_parameter('config_location').get_parameter_value().string_value
+        self.declare_parameters(namespace='', parameters=read_pid_yaml_and_generate_parameters('quali_gate_detector_node', config_location))
     
     def get_value(self, param_name: str):
         return int(self.get_parameter(param_name).get_parameter_value().double_value)
