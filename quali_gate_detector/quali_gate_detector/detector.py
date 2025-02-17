@@ -6,7 +6,6 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CompressedImage
 from custom_msgs.msg import GateDetection
-from control_panel.control_panel import create_control_panel, ControlPanelItem as CPI
 
 # for foxglove params
 from rclpy.executors import MultiThreadedExecutor
@@ -16,31 +15,6 @@ from controls_movement.param_helper import read_pid_yaml_and_generate_parameters
 max_cnt_width = 200
 min_cnt_height = 40
 min_cnt_area = 500
-
-#values = {
-#    'max_cnt_w': CPI(value=90, maximum=200),
-#    'min_cnt_h': CPI(value=120, maximum=200),
-#    'clahe_limit': CPI(value=10, maximum=50),
-#    'erosion_first': CPI(value=1, maximum=1),
-#    'morph_iterations': CPI(value=5, maximum=10),
-#    'erosion_iterations': CPI(value=1, maximum=10),
-#    'e_kernal_w': CPI(value=1, maximum=15, minimum=1),
-#    'e_kernal_h': CPI(value=5, maximum=15, minimum=1),
-#    'dilation_iterations': CPI(value=2, maximum=10),
-#    'd_kernal_w': CPI(value=2, maximum=15, minimum=1),
-#    'd_kernal_h': CPI(value=5, maximum=15, minimum=1),
-#    'min_H': CPI(value=250, maximum=360),
-#    'max_H': CPI(value=23, maximum=360),
-#    'min_S': CPI(value=60),
-#    'max_S': CPI(value=255),
-#    'min_V': CPI(value=0),
-#    'max_V': CPI(value=160),
-#}
-#create_control_panel("Quali gate thresholds",values)
-
-# def custom_open(input):
-#     output = cv2.erode(input, taller_kernel, iterations=1)
-#     return cv2.dilate(output, tallish_kernel, iterations=2)
 
 class QualiGateDetector(Node):
     is_playing = False
