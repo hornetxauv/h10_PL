@@ -1,4 +1,5 @@
 from __future__ import print_function
+import threading
 import cv2
 from cv_bridge import CvBridge
 import rclpy
@@ -28,6 +29,10 @@ class QualiGateDetector(Node):
         self.bridge = CvBridge()
 
         self.get_logger().info("init")
+
+        input_thread = threading.Thread(target=cv2.waitKey)
+        input_thread.daemon = True
+        input_thread.start()
     
     def get_value(self, param_name: str):
         return int(self.get_parameter(param_name).get_parameter_value().double_value)
