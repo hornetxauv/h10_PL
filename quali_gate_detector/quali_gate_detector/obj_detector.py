@@ -68,7 +68,8 @@ class ObjDetector(Node):
         # Here is sample code for converting a coloured image to gray scale using opencv
         cv_img = self.bridge.compressed_imgmsg_to_cv2(msg)
         img_height, img_width, channels = cv_img.shape
-        self.get_logger().info(f"img_height: {img_height}, img_width: {img_width}")
+        # height and width is 480, 640
+        # self.get_logger().info(f"img_height: {img_height}, img_width: {img_width}")
         self.original_img = cv_img
         
         # # https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html
@@ -96,7 +97,7 @@ class ObjDetector(Node):
             if score > threshold:
                 name = results.names[int(class_id)].upper()
                 colour = (0, 255, 0)
-                cv2.rectangle(cv_img, (int(x1), int(y1)), (int(x2), int(y2)), colour, 4)
+                # cv2.rectangle(cv_img, (int(x1), int(y1)), (int(x2), int(y2)), colour, 4)
                 cv2.putText(cv_img, name, (int(x1), int(y1 - 10)),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.3, colour, 3, cv2.LINE_AA)
 
@@ -119,62 +120,6 @@ class ObjDetector(Node):
                     self.pub_detection.publish(msg)
         
         self.pub_img(cv_img, encoding="bgr8")
-    
-    def draw_contours_and_bbox(self, img, cnts, label=None, colour=(0, 255, 0)):
-        for cnt in cnts:
-            img = cv2.drawContours(img, cnt, -1, (0,255,0), 1)
-            x,y,w,h = cv2.boundingRect(cnt)
-            img = cv2.rectangle(img, (x, y), (x + w, y + h), colour, 3)
-
-            dimensionsStr = f'({w}, {h}); {str(cv2.contourArea(cnt))}'
-            if label:
-                label += f" ({dimensionsStr})"
-            else:
-                label = dimensionsStr
-            img = cv2.putText(img, label, (x+10, y-10), 0, 1, colour, 2)
-        
-        return img
-    
-    def find_and_draw_centres(self, img, cnts, colour=(0, 0, 255)):
-        centres=[]
-        for cnt in cnts:
-            M = cv2.moments(cnt)
-            if M['m00'] != 0:
-                cx = int(M['m10']/M['m00'])
-                cy = int(M['m01']/M['m00'])
-                centre = (cx, cy)
-                centres.append(centre)
-                cv2.drawContours(img, [cnt], -1, colour, 2)
-                cv2.circle(img, centre, 7, colour, -1)
-                # cv2.putText(img, "center", (cx - 20, cy - 20),
-                #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-        
-        return centres
-    
-    # def find_distance(self, centres):
-    #     if len(centres) < 2:
-    #         return 0
-    #     dx=0
-    #     dy=0
-    #     x=centres[-1][0]
-    #     y=centres[-1][1]
-    #     for c in centres:
-    #         dx += abs(c[0]-x)
-    #         dy += abs(c[1]-y)
-    #     return math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
-
-    def find_and_draw_midpoint(self, img, centres, colour=(0, 0, 255)):
-        l=len(centres)
-        if l < 2:
-            return img, None
-        x=0
-        y=0
-        for c in centres:
-            x += c[0]
-            y += c[1]
-        gate_centre = (round(x/l), round(y/l))
-        cv2.circle(img, gate_centre, 7, colour, -1)
-        return img, gate_centre
     
     def _pub_img(self, pubber, frame, encoding="mono8"):
         img_msg = self.bridge.cv2_to_imgmsg(frame, encoding=encoding)
