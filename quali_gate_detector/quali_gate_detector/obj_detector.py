@@ -14,7 +14,7 @@ from custom_msgs.msg import GateDetection
 
 detection_interval = 4
 #model_path = '/home/bb/ros_workspaces/h10_workspace/h9.onnx'
-model_path = '/home/bb/ros_workspaces/h10_workspace/front_yolov8n_070424_1.engine'
+model_path = '/home/bb/ML/front_yolov8n_070424_1.engine'
 threshold = 0.5
 
 class ObjDetector(Node):
