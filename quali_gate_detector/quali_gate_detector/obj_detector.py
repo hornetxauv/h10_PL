@@ -30,7 +30,7 @@ class ObjDetector(Node):
         #self.model = ultralytics.YOLO(model_path, task="detect")
         # Load the exported TensorRT model
         self.model = ultralytics.YOLO(model_path, task="detect")
-        self.pub_debug_img = self.create_publisher(Image, "/perc/debug_img", 10)
+        self.pub_debug_img = self.create_publisher(CompressedImage, "/perc/debug_img", 10)
         self.pub_detection = self.create_publisher(
             GateDetection,
             "/perc/quali_gate", 10)
@@ -126,7 +126,9 @@ class ObjDetector(Node):
         pubber.publish(img_msg)
 
     def pub_img(self, frame, **kwargs):
-        self._pub_img(self.pub_debug_img, frame, **kwargs)
+        img_msg = self.bridge.cv2_to_compressed_imgmsg(frame)
+        self.pub_debug_img.publish(img_msg)
+        # self._pub_img(self.pub_debug_img, frame, **kwargs)
     
 def main(args=None):
 

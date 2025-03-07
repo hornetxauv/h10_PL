@@ -28,7 +28,7 @@ class QualiGateDetector(Node):
         config_location = package_directory + self.get_parameter('config_location').get_parameter_value().string_value
         self.declare_parameters(namespace='', parameters=read_pid_yaml_and_generate_parameters('quali_gate_detector_node', config_location))
 
-        self.pub_debug_img = self.create_publisher(Image, "/perc/debug_img", 10)
+        self.pub_debug_img = self.create_publisher(CompressedImage, "/perc/debug_img", 10)
         self.pub_debug_img_2 = self.create_publisher(Image, "/perc/debug_img_2", 10)
         self.pub_debug_img_3 = self.create_publisher(Image, "/perc/debug_img_3", 10)
         self.pub_debug_img_4 = self.create_publisher(Image, "/perc/debug_img_4", 10)
@@ -275,7 +275,8 @@ class QualiGateDetector(Node):
         pubber.publish(img_msg)
 
     def pub_img(self, frame, **kwargs):
-        self._pub_img(self.pub_debug_img, frame, **kwargs)
+        img_msg = self.bridge.cv2_to_compressed_imgmsg(frame)
+        self.pub_debug_img.publish(img_msg)
     
     def pub_img_2(self, frame, **kwargs):
         self._pub_img(self.pub_debug_img_2, frame, **kwargs)
