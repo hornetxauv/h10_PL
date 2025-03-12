@@ -16,6 +16,7 @@ detection_interval = 4
 #model_path = '/home/bb/ros_workspaces/h10_workspace/h9.onnx'
 model_path = '/home/aa/ML/front_yolov8n_070424_1.engine'
 threshold = 0.5
+CAMERA_FOV_DEG_HORIZONTAL = 60
 
 class ObjDetector(Node):
     is_playing = False
@@ -114,6 +115,7 @@ class ObjDetector(Node):
                     #if gate_centre:
                     msg.width = float(x2-x1)
                     msg.dx = float(img_width/2 - gate_centre[0])
+                    msg.dx_theta = float(msg.dx/img_width*CAMERA_FOV_DEG_HORIZONTAL)
                     msg.dy = float(img_height/2 - gate_centre[1])
                     msg.sides_ratio = 1.0 #ML won't be able to give us sides ratio for now
                     self.get_logger().info("pub detection")
