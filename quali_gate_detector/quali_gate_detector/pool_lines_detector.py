@@ -21,7 +21,7 @@ class PoolLinesDetectorNode(Node):
         self.bottom_image_feed = self.create_subscription(
             CompressedImage,
             #"/left/compressed", #for feed from session3 rosbag
-            "/left/image_raw/compressed", #for live feed from v4l2
+            "/bottom/image_raw/compressed", #for live feed from v4l2
             self.image_feed_callback,
             10)
 
