@@ -12,23 +12,28 @@ from scipy.stats import mode
 # Detect Floor tile lines and calculate angles
 # Continuously output yaw angles as a graph and publish detected lines
 
-class FloorTilesNode(Node):
+class PoolLinesDetectorNode(Node):
     def __init__(self):
-        super().__init__('floor_tiles_node')
+        super().__init__('pool_lines_detector_node')
 
-        self.tile_angles = self.create_publisher(Float32MultiArray, '/poolLines', 10)
-        self.lines_pub = self.create_publisher(Image, '/detected_lines', 10)
+        self.tile_angles = self.create_publisher(Float32MultiArray, '/perc/pool_lines', 10)
+        self.lines_pub = self.create_publisher(CompressedImage, '/perc/debug_pool_lines_img', 10)
         self.bottom_image_feed = self.create_subscription(
-            Image,
-            '/video_frames',
-            self.image_callback,
-            10
-        )
+            CompressedImage,
+            #"/left/compressed", #for feed from session3 rosbag
+            "/left/image_raw/compressed", #for live feed from v4l2
+            self.image_feed_callback,
+            10)
+
+        # self.pub_gate_detection = self.create_publisher(
+        #     GateDetection,
+        #     "/perc/quali_gate", 10)
         self.bridge = CvBridge()
         self.angle_history = []
 
-    def image_callback(self, msg):
-        img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+    def image_feed_callback(self, msg):
+        img = self.bridge.compressed_imgmsg_to_cv2(msg)
+        # img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         print("\033c")  # Clear terminal
         
         # Crop image to avoid detecting frame edges
@@ -94,7 +99,8 @@ class FloorTilesNode(Node):
 
             # Publish detected lines image
             #img_msg = self.bridge.cv2_to_compressed_imgmsg(cdstP)
-            img_msg = self.bridge.cv2_to_imgmsg(cdstP, encoding="bgr8")
+            # img_msg = self.bridge.cv2_to_imgmsg(cdstP, encoding="bgr8")
+            img_msg = self.bridge.cv2_to_compressed_imgmsg(cdstP)
             self.lines_pub.publish(img_msg)
         else:
             print("No lines detected")
@@ -108,19 +114,13 @@ class FloorTilesNode(Node):
         plt.legend()
         plt.pause(0.01)
 
-
 def main(args=None):
     rclpy.init(args=args)
-    floor_tiles_node = FloorTilesNode()
+    floor_tiles_node = PoolLinesDetectorNode()
     plt.ion()
     rclpy.spin(floor_tiles_node)
     floor_tiles_node.destroy_node()
     rclpy.shutdown()
 
-
 if __name__ == '__main__':
     main() 
-
-
-
-#img_msg = self.bridge.cv2_to_imgmsg(cdstP, encoding="bgr8")
