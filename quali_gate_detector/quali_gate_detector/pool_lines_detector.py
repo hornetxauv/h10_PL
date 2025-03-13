@@ -62,6 +62,7 @@ class PoolLinesDetectorNode(Node):
         linesP = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, None, 50, 10)
 
         if linesP is not None:
+            all_thetas = []
             thetas = []
             h, w = img.shape[:2]
             edge_margin = int(0.10 * w)  # Ignore lines close to 10% of width from edges
@@ -76,14 +77,19 @@ class PoolLinesDetectorNode(Node):
                 
                 angle = np.arctan2(y2 - y1, x2 - x1)
                 angle_deg = np.degrees(angle)
-                
-                # Only consider horizontal lines (-10° to +10° or 170° to 180°)
-                if -10 <= angle_deg <= 10 or 170 <= abs(angle_deg) <= 180:
+                angle_deg = angle_deg + (90 if angle_deg < 0 else -90)
+
+                if -20 <= angle_deg <= 20:
                     cv2.line(cdstP, (x1, y1), (x2, y2), (0, 0, 255), 3, cv2.LINE_AA)
-                    thetas.append(angle_deg)
+                    cv2.putText(cdstP, str(angle_deg.round(2)), (int(x1), int(y1 - 10)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 3, cv2.LINE_AA)
+                thetas.append(angle_deg)
+
+            print(f"all thetas: {[i.round(2) for i in thetas]}")
 
             if not thetas:
                 print("No valid lines detected")
+                self.lines_pub.publish(self.bridge.cv2_to_compressed_imgmsg(img))
                 return
             
             dominant_angle = np.median(thetas)
